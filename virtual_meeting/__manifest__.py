@@ -7,7 +7,7 @@
     """,
     'author': "Alhaditech",
     'website': "http://www.alhaditech.com",
-    'price': 80,
+    'price': 85,
     'currency': 'EUR',
     'license': 'OPL-1',
     'category': 'E-Learning',
