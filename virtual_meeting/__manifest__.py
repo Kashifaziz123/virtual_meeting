@@ -14,7 +14,7 @@
     'version': '0.1',
     # any module necessary for this one to work correctly
     'depends': ['base', 'calendar', 'web'],
-    'images': ['static/description/virtual_meeting_cover.jpg'],
+    'images': ['static/description/virtual_meeting_cover.jpeg'],
     # always loaded
     'data': [
         'security/ir.model.access.csv',
