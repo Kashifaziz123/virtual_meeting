@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "Virtual Meeting",
+    'name': "Virtual Meeting Bigbluebutton",
     'summary': """
         Online meeting via BigBlueButton""",
     'description': """
