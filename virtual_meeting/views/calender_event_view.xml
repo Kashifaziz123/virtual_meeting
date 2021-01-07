@@ -10,15 +10,6 @@
                             <button string="View recording" class="btn btn-warning" name="download_recording" type="object" states="done" />
                             <button string="Start Meeting" class="btn btn-info" name="create_meeting" type="object" states="draft"/>
                             <button string="Join Link" class="btn btn-success" name="join_meeting_url"  type="object" states="in_progress"/>
-<!--                            <img t-att-src="/virtual_meeting/static/img/copy.png" class="oe_kanban_avatar o_image_24_cover" style="width: 20px;height: 20px;border-radius: 50%;"/>-->
-<!--                            <span>-->
-<!--                                <i class="fa fa-copy" title="joinGuestModerator"/>Copy Link-->
-<!--                            </span>-->
-<!--                            <span>-->
-<!--                                <i class="fa fa-copy" title="joinGuestAttendee"/>Copy Link-->
-<!--                            </span>-->
-<!--                            <i name="joinGuestModerator" widget="url" string="Generate link for Guest as Moderator" class="btn btn-warning" readonly="True" attrs="{'invisible': ['&amp;', ('inviteGuestModerator', '=', False),('state', '!=', 'in_progress')]}"/>-->
-<!--                            <i name="joinGuestAttendee" widget="url" string="Generate link for Guest as Attendee" class="far fa-copy" readonly="True" attrs="{'invisible': ['&amp;', ('inviteGuestAttendee', '=', False),('state', '!=', 'in_progress')]}"/>-->
                             <button string="End Meeting" class="btn btn-danger" name="delete_meeting" type="object" states="in_progress"/>
                         </header>
                     </xpath>
@@ -48,22 +39,40 @@
                     </xpath>
                     <xpath expr="//notebook" position="inside">
                         <page string="Virtual Meeting" attrs="{'invisible': [('isOnline', '=', False)]}">
-                            <group>
+                            <group string="General Settings">
+                                <group col="1">
                                 <field name="meetingID" invisible="1"/>
                                 <field name="welcome" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
                                 <field name="moderatorOnlyMessage" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
                                 <field name="maxParticipants" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <field name="send_mail" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                </group>
+                            </group>
+                            <group string="Guest">
+                                <group col="1">
+                                    <field name="inviteGuestModerator" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                    <field name="inviteGuestAttendee" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                </group>
+                                <group col="1">
+                                    <t t-if="inviteGuestModerator">
+                                        <field name="joinGuestModerator" widget="CopyClipboardChar"  attrs="{'invisible': [('inviteGuestModerator', '=', False)]}"/>
+                                    </t>
+                                    <t t-if="inviteGuestAttendee">
+                                        <field name="joinGuestAttendee" widget="CopyClipboardChar"  attrs="{'invisible': [('inviteGuestAttendee', '=', False)]}"/>
+                                    </t>
+                                </group>
                             </group>
                             <group>
-                                <field name="inviteGuestModerator" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="inviteGuestAttendee" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="allowStartStopRecording" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="autoStartRecording" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="send_mail" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="webcamsOnlyForModerator" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="muteOnStart" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="allowModsToUnmuteUsers" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
-                                <field name="lockSettingsDisableMic" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                <group string="Recordings" col="1">
+                                    <field name="allowStartStopRecording" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                    <field name="autoStartRecording" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                </group>
+                                <group string="Media" col="1">
+                                    <field name="webcamsOnlyForModerator" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                    <field name="muteOnStart" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                    <field name="allowModsToUnmuteUsers" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                    <field name="lockSettingsDisableMic" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
+                                </group>
                             </group>
                         </page>
                         </xpath>

@@ -29,10 +29,9 @@
                 <field name="isOnline"/>
                 <label class="col-form-label o_form_label" for="o_field_input_162">Online Meeting</label>
                 <div class="o_field_boolean o_field_widget custom-control custom-checkbox" name="isOnline">
-                    <input type="checkbox" id="o_field_input_350" name="isOnline" class="custom-control-input" t-att-value="widget.dataTemplate.isOnline or None"/>
+                    <input type="checkbox" id="o_field_input_350" name="isOnline" class="custom-control-input"/>
                     <label for="o_field_input_350" class="custom-control-label"/>
                 </div>
-
             </t>
         </t>
 </templates>

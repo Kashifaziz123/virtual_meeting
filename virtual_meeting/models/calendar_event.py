@@ -2,6 +2,7 @@
 import uuid
 import hashlib
 import requests
+import pyperclip
 from xml.etree import ElementTree
 from odoo import models, fields, api, exceptions
 
@@ -27,7 +28,7 @@ class UmlOnlineClass(models.Model):
     isMultipleModerators = fields.Boolean(string="Multiple Moderators")
     user_ids = fields.Many2many('res.users', string='Owners', ondelete='cascade', default=lambda self: self.env.user)
     moderatorOnlyMessage = fields.Char(string="Welcome Note for Moderators")
-    maxParticipants = fields.Integer(string="Max Attendees Allowed", required=True)
+    maxParticipants = fields.Integer(string="Max Attendees Allowed", required=True, default=10)
     joinGuestModerator = fields.Char(string="Join guest link for moderator")
     joinGuestAttendee = fields.Char(string="Join guest link for attendee")
 
@@ -63,26 +64,14 @@ class UmlOnlineClass(models.Model):
 
     def create_meeting(self):
         general_settings = self.get_bigblue_config()
-        if self.duration == 0:
-            checksums = "create" + "name=" + str(self.name).replace(" ", "%20") + "&meetingID=" + str(self.meetingID)\
-                        + "&record=true&logoutURL="+str(general_settings[2])+"&webcamsOnlyForModerator="+str(self.webcamsOnlyForModerator)\
-                        + "&autoStartRecording=" + str(self.autoStartRecording)\
-                        + "&allowStartStopRecording=" + str(self.allowStartStopRecording) \
-                        + "&welcome=" + str(self.welcome).replace(" ", "%20") + "&muteOnStart=" + str(self.muteOnStart) + "&allowModsToUnmuteUsers="\
-                        + str(self.allowModsToUnmuteUsers) + "&lockSettingsDisableMic=" + str(self.lockSettingsDisableMic) + str(general_settings[1])
-            checksum = hashlib.sha1(checksums.encode()).hexdigest()
-            link = str(general_settings[0])+"create?name="+str(self.name)+"&meetingID="\
-                   +str(self.meetingID)+"&record=true&logoutURL="+str(general_settings[2])+"&webcamsOnlyForModerator="+str(self.webcamsOnlyForModerator)\
-                   +"&autoStartRecording="+str(self.autoStartRecording)+"&allowStartStopRecording="+str(self.allowStartStopRecording) \
-                   + "&welcome=" + str(self.welcome).replace(" ", "%20") + "&muteOnStart=" + str(self.muteOnStart) + "&allowModsToUnmuteUsers=" \
-                   + str(self.allowModsToUnmuteUsers) + "&lockSettingsDisableMic=" + str(self.lockSettingsDisableMic) \
-                   +"&checksum="+checksum
-        else:
+        if self.duration != 0:
             duration = str(self.duration).split('.')
             duration[0] = int(duration[0])*60 + int(duration[1])
             checksums = "create" + "name=" + str(self.name).replace(" ", "%20") + "&meetingID=" + str(self.meetingID)\
                         + "&record=true&logoutURL="+str(general_settings[2])+"&webcamsOnlyForModerator="+str(self.webcamsOnlyForModerator)\
-                        + "&duration=" + str(duration[0]) + "&autoStartRecording=" + str(self.autoStartRecording)\
+                        + "&duration=" + str(duration[0]) \
+                        + "&moderatorOnlyMessage=" + str(self.moderatorOnlyMessage).replace(" ", "%20") + "&maxParticipants=" + str(self.maxParticipants) \
+                        + "&autoStartRecording=" + str(self.autoStartRecording)\
                         + "&allowStartStopRecording=" + str(self.allowStartStopRecording) \
                         + "&welcome=" + str(self.welcome).replace(" ", "%20") + "&muteOnStart=" + str(self.muteOnStart) + "&allowModsToUnmuteUsers=" \
                         + str(self.allowModsToUnmuteUsers) + "&lockSettingsDisableMic=" + str(self.lockSettingsDisableMic)\
@@ -90,7 +79,9 @@ class UmlOnlineClass(models.Model):
             checksum = hashlib.sha1(checksums.encode()).hexdigest()
             link = str(general_settings[0])+"create?name="+str(self.name).replace(" ", "%20")+"&meetingID="\
                    +str(self.meetingID)+"&record=true&logoutURL="+str(general_settings[2])+"&webcamsOnlyForModerator="+str(self.webcamsOnlyForModerator)\
-                   +"&duration="+str(duration[0])+"&autoStartRecording="\
+                   +"&duration="+str(duration[0]) \
+                   + "&moderatorOnlyMessage=" + str(self.moderatorOnlyMessage).replace(" ", "%20") + "&maxParticipants=" + str(self.maxParticipants) \
+                   +"&autoStartRecording="\
                    +str(self.autoStartRecording)+"&allowStartStopRecording="+str(self.allowStartStopRecording) \
                    + "&welcome=" + str(self.welcome).replace(" ", "%20") + "&muteOnStart=" + str(self.muteOnStart) + "&allowModsToUnmuteUsers=" \
                    + str(self.allowModsToUnmuteUsers) + "&lockSettingsDisableMic=" + str(self.lockSettingsDisableMic)\
@@ -104,7 +95,7 @@ class UmlOnlineClass(models.Model):
             self.state = 'in_progress'
             self.attendeePW = Returns[4].text
             self.moderatorPW = Returns[5].text
-            if self.inviteGuestAttendee & self.inviteGuestModerator:
+            if self.inviteGuestAttendee and self.inviteGuestModerator:
                 self.join_guest_meeting(3)
             elif self.inviteGuestModerator:
                 self.join_guest_meeting(1)
@@ -124,20 +115,20 @@ class UmlOnlineClass(models.Model):
 
     def join_guest_meeting(self, choice):
         general_settings = self.get_bigblue_config()
-        if choice == 1 | choice == 3:
+        if choice == 1 or choice == 3:
             checksum = "join"+"meetingID="+str(self.meetingID)+"&password="+str(self.moderatorPW)+"&fullName=Guest"\
                        + "&guest=true"+str(general_settings[1])
             checksum = hashlib.sha1(checksum.encode()).hexdigest()
             link = str(general_settings[0])+"join?meetingID=" + str(self.meetingID) + "&password="+ str(self.moderatorPW)\
                     + "&fullName=Guest&guest=true" + "&checksum="+checksum
             self.joinGuestModerator = link
-        if choice == 2 | choice == 3:
+        if choice == 2 or choice == 3:
             checksum = "join"+"meetingID="+str(self.meetingID)+"&password="+str(self.attendeePW)+"&fullName=Guest"\
                        + "&guest=true"+str(general_settings[1])
             checksum = hashlib.sha1(checksum.encode()).hexdigest()
             link = str(general_settings[0])+"join?meetingID=" + str(self.meetingID) + "&password="+ str(self.attendeePW)\
                    + "&fullName=Guest&guest=true" + "&checksum="+checksum
-            self.inviteGuestAttendee = link
+            self.joinGuestAttendee = link
 
     def join_meeting(self, person, name):
         general_settings = self.get_bigblue_config()
@@ -191,6 +182,7 @@ class UmlOnlineClass(models.Model):
         link = str(general_settings[0]) + "join?meetingID=" + str(self.meetingID) + "&password=" + str(self.moderatorPW) \
                + "&fullName=" + str(self.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + "&checksum=" + checksum
         try:
+            print(link)
             response = requests.get(link)
             Returns = ElementTree.fromstring(response.content)
             if Returns[0].text == "SUCCESS":
