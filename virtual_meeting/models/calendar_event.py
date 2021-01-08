@@ -31,6 +31,7 @@ class UmlOnlineClass(models.Model):
     maxParticipants = fields.Integer(string="Max Attendees Allowed", required=True, default=10)
     joinGuestModerator = fields.Char(string="Join guest link for moderator")
     joinGuestAttendee = fields.Char(string="Join guest link for attendee")
+    recording_url = fields.Char(string="Recording url")
 
     allowStartStopRecording = fields.Boolean(string="Recording Enable")
     autoStartRecording = fields.Boolean(string="Auto Recording")
@@ -148,31 +149,36 @@ class UmlOnlineClass(models.Model):
         return link
 
     def download_recording(self):
-        general_settings = self.get_bigblue_config()
-        checksums = "getRecordings" + "meetingID=" + str(self.meetingID)+str(general_settings[1])
-        checksum = hashlib.sha1(checksums.encode()).hexdigest()
-        link = str(general_settings[0])+"getRecordings?meetingID="+str(self.meetingID)+"&checksum="+checksum
-
-        try:
-            response = requests.get(link)
-            Returns = ElementTree.fromstring(response.content)
-        except:
-            raise exceptions.AccessDenied("Server error\n Please try again in few minutes")
-
-        haschild = False
-        for child in Returns[1]:
-            haschild = True
-            break
-        if haschild:
-            return {
-                'type': 'ir.actions.act_url',
-                'target': 'self',
-                'url': Returns[1][0][13][0][1].text,
-            }
-        else:
-            raise exceptions.AccessDenied("Server error !\n If recording was made then"
-                                          "\n Try again in "+str(self.duration)+" minutes."
-                                          "\n after the time of class ended")
+        return {
+            'type': 'ir.actions.act_url',
+            'target': 'self',
+            'url': self.recording_url,
+        }
+        # general_settings = self.get_bigblue_config()
+        # checksums = "getRecordings" + "meetingID=" + str(self.meetingID)+str(general_settings[1])
+        # checksum = hashlib.sha1(checksums.encode()).hexdigest()
+        # link = str(general_settings[0])+"getRecordings?meetingID="+str(self.meetingID)+"&checksum="+checksum
+        #
+        # try:
+        #     response = requests.get(link)
+        #     Returns = ElementTree.fromstring(response.content)
+        # except:
+        #     raise exceptions.AccessDenied("Server error\n Please try again in few minutes")
+        #
+        # haschild = False
+        # for child in Returns[1]:
+        #     haschild = True
+        #     break
+        # if haschild:
+        #     return {
+        #         'type': 'ir.actions.act_url',
+        #         'target': 'self',
+        #         'url': Returns[1][0][13][0][1].text,
+        #     }
+        # else:
+        #     raise exceptions.AccessDenied("Server error !\n If recording was made then"
+        #                                   "\n Try again in "+str(self.duration)+" minutes."
+        #                                   "\n after the time of class ended")
 
     def join_meeting_url(self):
         general_settings = self.get_bigblue_config()
@@ -187,7 +193,7 @@ class UmlOnlineClass(models.Model):
             Returns = ElementTree.fromstring(response.content)
             if Returns[0].text == "SUCCESS":
                 if self.isMultipleModerators:
-                    if self.env.user.id in self.user_ids.id:
+                    if self.env.user.id in self.user_ids.ids:
                         return {
                             'type': 'ir.actions.act_url',
                             'target': 'new',
@@ -243,6 +249,7 @@ class UmlOnlineClass(models.Model):
         default['meetingID'] = uuid.uuid1()
         default['joinGuestModerator'] = ''
         default['joinGuestAttendee'] = ''
+        default['recording_url'] = ''
         return super(UmlOnlineClass, self).copy(default)
 
     def unlink(self):
@@ -252,29 +259,54 @@ class UmlOnlineClass(models.Model):
         return super(UmlOnlineClass, self).unlink()
 
     def meeting_running(self):
-        records = self.env['uml.online.class'].search([], limit=1, order='id desc')
+        records = self.env['calendar.event'].search([('state', '=', 'in_progress')], limit=1, order='id desc')
         general_settings = self.get_bigblue_config()
         for data in records:
-            if data.state == "in_progress":
-                checksum = "join" + "meetingID=" + str(data.meetingID) + "&password=" + str(data.moderatorPW) + "&fullName=" \
-                           + str(data.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + str(general_settings[1])
-                checksum = hashlib.sha1(checksum.encode()).hexdigest()
-                link = str(general_settings[0]) + "join?meetingID=" + str(data.meetingID) + "&password=" + str(data.moderatorPW) \
-                       + "&fullName=" + str(data.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + "&checksum=" + checksum
-                try:
-                    response = requests.get(link)
-                    Returns = ElementTree.fromstring(response.content)
-                except:
-                    data.state = 'done'
+            checksum = "join" + "meetingID=" + str(data.meetingID) + "&password=" + str(data.moderatorPW) + "&fullName=" \
+                      + str(data.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + str(general_settings[1])
+            checksum = hashlib.sha1(checksum.encode()).hexdigest()
+            link = str(general_settings[0]) + "join?meetingID=" + str(data.meetingID) + "&password=" + str(data.moderatorPW) \
+                  + "&fullName=" + str(data.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + "&checksum=" + checksum
+            try:
+                response = requests.get(link)
+                Returns = ElementTree.fromstring(response.content)
+            except:
+                data.state = 'done'
+
+    def recording_ready(self):
+        records = self.env['calendar.event'].search([('state', '=', 'done'), '|', ('allowStartStopRecording', '=', 'True'),
+                                                     ('autoStartRecording', '=', 'True')])
+        general_settings = self.get_bigblue_config()
+        for data in records:
+            checksums = "getRecordings" + "meetingID=" + str(data.meetingID) + str(general_settings[1])
+            checksum = hashlib.sha1(checksums.encode()).hexdigest()
+            link = str(general_settings[0]) + "getRecordings?meetingID=" + str(data.meetingID) + "&checksum=" + checksum
+
+            try:
+                response = requests.get(link)
+                Returns = ElementTree.fromstring(response.content)
+            except:
+                print("Server error\n Please try again in few minutes")
+
+            haschild = False
+            for child in Returns[1]:
+                haschild = True
+                break
+            if haschild:
+                data.recording_url = Returns[1][0][13][0][1].text
+                self.send_recording_ready_email_func(data)
+            else:
+                print("Server error !\n If recording was made then\n Try again in " +
+                      str(self.duration) + " minutes.\n after the time of class ended")
 
     def send_email_func(self):
         template_mod = self.env.ref('virtual_meeting.calendar_event_mail_moderator', False)
         template_stu = self.env.ref('virtual_meeting.calendar_event_mail_attendee', False)
         template_stu.subject = "Your Meeting " + str(self.name) + " Scheduled for " + str(self.start_datetime) \
                                + " has been started."
-        template_mod.subject = "You have started the Meeting " + str(self.name) + " Scheduled for " +\
-                               str(self.start_datetime) + "."
         if not self.isMultipleModerators:
+            template_mod.subject = "You have started the Meeting " + str(self.name) + " Scheduled for " + \
+                                   str(self.start_datetime) + "."
             template_mod.body_html = " \
                     <div style='margin: 0px; padding: 0px;'>\
                         <p style='margin: 0px; padding: 0px; font-size: 13px;'>\
@@ -290,6 +322,8 @@ class UmlOnlineClass(models.Model):
                 template_mod.email_to = self.user_id.email
                 template_mod.send_mail(self.id, force_send=True)
             else:
+                template_mod.subject = "One of the moderators have started the Meeting " + str(self.name) + " Scheduled for " + \
+                                       str(self.start_datetime) + "."
                 for user in self.user_ids:
                     template_mod.email_to = user.email
                     template_mod.body_html = " \
@@ -317,5 +351,58 @@ class UmlOnlineClass(models.Model):
                         + "</p>\
                     </div>"
                 template_stu.send_mail(self.id, force_send=True)
+        except:
+            raise exceptions.Warning("Error sending mail.")
+
+    def send_recording_ready_email_func(self, record):
+        template_mod = self.env.ref('virtual_meeting.calendar_event_mail_moderator', False)
+        template_stu = self.env.ref('virtual_meeting.calendar_event_mail_attendee', False)
+        template_stu.subject = "Your Recording for the Meeting " + str(record.name) + " Scheduled for " + str(record.start_datetime) \
+                               + " is ready."
+        template_mod.subject = "Your Recording for the Meeting " + str(record.name) + " Scheduled for " + str(record.start_datetime) \
+                               + " is ready."
+        if not record.isMultipleModerators:
+            template_mod.body_html = " \
+                    <div style='margin: 0px; padding: 0px;'>\
+                        <p style='margin: 0px; padding: 0px; font-size: 13px;'>\
+                            Dear " + record.user_id.name + "\
+                            <br /><br />\
+                            Here is your\
+                            <br />\
+                            link for your meeting recording " + str(record.recording_url)\
+                        + "</p>\
+                    </div>"
+        try:
+            if not record.isMultipleModerators:
+                template_mod.email_to = record.user_id.email
+                template_mod.send_mail(record.id, force_send=True)
+            else:
+                for user in record.user_ids:
+                    template_mod.email_to = user.email
+                    template_mod.body_html = " \
+                    <div style='margin: 0px; padding: 0px;'>\
+                        <p style='margin: 0px; padding: 0px; font-size: 13px;'>\
+                            Dear " + user.name + "\
+                            <br /><br />\
+                            Here is your\
+                            <br />\
+                            link for your meeting recording " + str(record.recording_url)\
+                        + "</p>\
+                    </div>"
+                    template_mod.send_mail(record.id, force_send=True)
+
+            for attendee in record.attendee_ids:
+                template_stu.email_to = attendee.email
+                template_stu.body_html = " \
+                    <div style='margin: 0px; padding: 0px;'>\
+                        <p style='margin: 0px; padding: 0px; font-size: 13px;'>\
+                            Dear " + attendee.partner_id.name + "\
+                            <br /><br />\
+                            Here is your\
+                            <br />\
+                            link for your meeting recording " + str(record.recording_url)\
+                        + "</p>\
+                    </div>"
+                template_stu.send_mail(record.id, force_send=True)
         except:
             raise exceptions.Warning("Error sending mail.")

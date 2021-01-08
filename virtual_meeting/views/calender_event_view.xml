@@ -7,7 +7,8 @@
             <field name="arch" type="xml">
                     <xpath expr="/form/*"  position="before">
                         <header attrs="{'invisible': [('isOnline', '=', False)]}">
-                            <button string="View recording" class="btn btn-warning" name="download_recording" type="object" states="done" />
+                            <field name="recording_url" invisible="1"/>
+                            <button string="View recording" class="btn btn-warning" name="download_recording" type="object" attrs="{'invisible': ['|',('recording_url', '=', ''), ('state', '!=', 'done')]}"/>
                             <button string="Start Meeting" class="btn btn-info" name="create_meeting" type="object" states="draft"/>
                             <button string="Join Link" class="btn btn-success" name="join_meeting_url"  type="object" states="in_progress"/>
                             <button string="End Meeting" class="btn btn-danger" name="delete_meeting" type="object" states="in_progress"/>
@@ -55,10 +56,10 @@
                                 </group>
                                 <group col="1">
                                     <t t-if="inviteGuestModerator">
-                                        <field name="joinGuestModerator" widget="CopyClipboardChar"  attrs="{'invisible': [('inviteGuestModerator', '=', False)]}"/>
+                                        <field name="joinGuestModerator" widget="CopyClipboardChar" readonly="True" attrs="{'invisible': [('inviteGuestModerator', '=', False)]}"/>
                                     </t>
                                     <t t-if="inviteGuestAttendee">
-                                        <field name="joinGuestAttendee" widget="CopyClipboardChar"  attrs="{'invisible': [('inviteGuestAttendee', '=', False)]}"/>
+                                        <field name="joinGuestAttendee" widget="CopyClipboardChar" readonly="True"  attrs="{'invisible': [('inviteGuestAttendee', '=', False)]}"/>
                                     </t>
                                 </group>
                             </group>

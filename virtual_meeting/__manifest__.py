@@ -17,6 +17,7 @@
     'images': ['static/description/virtual_meeting_cover.jpg'],
     # always loaded
     'data': [
+        'views/Scheduler.xml',
         'security/ir.model.access.csv',
         'views/template.xml',
         'views/calender_event_view.xml',
