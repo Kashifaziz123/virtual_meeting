@@ -7,7 +7,7 @@
     """,
     'author': "Alhaditech",
     'website': "http://www.alhaditech.com",
-    'license': 'OPL-1',
+    'license': 'AGPL-3',
     'category': 'E-Learning',
     'version': '0.1',
     # any module necessary for this one to work correctly
