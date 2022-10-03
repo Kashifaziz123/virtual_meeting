@@ -7,6 +7,7 @@
             <field name="arch" type="xml">
                     <xpath expr="/form/*"  position="before">
                         <header attrs="{'invisible': [('isOnline', '=', False)]}">
+                            <field name="state" invisible="1"/>
                             <field name="recording_url" invisible="1"/>
                             <button string="View recording" class="btn btn-warning" name="download_recording" type="object" attrs="{'invisible': ['|',('recording_url', '=', ''), ('state', '!=', 'done')]}"/>
                             <button string="Start Meeting" class="btn btn-info" name="create_meeting" type="object" states="draft"/>
