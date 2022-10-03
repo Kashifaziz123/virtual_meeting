@@ -15,7 +15,7 @@
                             <button string="End Meeting" class="btn btn-danger" name="delete_meeting" type="object" states="in_progress"/>
                         </header>
                     </xpath>
-                    <xpath expr="//div[@class='oe_title']/h1" position="after">
+                    <xpath expr="//div[@class='oe_title mb-3']/h1" position="after">
                         <label for="isMultipleModerators"/>
                         <field name="isMultipleModerators" attrs="{'readonly': [('state', '!=', 'draft')]}"/>
                         <div name="isCheck" attrs="{'invisible': [('isMultipleModerators', '!=', False)]}">
