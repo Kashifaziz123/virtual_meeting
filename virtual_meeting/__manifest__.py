@@ -24,7 +24,7 @@
      'assets': {
         'web.assets_frontend': [
             'virtual_meeting/static/scss/ribbon.scss'
-        ]
+        ],
     },
     'qweb': [
         'static/xml/template.xml',
