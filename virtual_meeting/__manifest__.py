@@ -21,6 +21,10 @@
         'views/calender_event_view.xml',
         'views/res_config_settings_view.xml',
     ],
+     'assets': {
+        'web.assets_frontend': [
+            'virtual_meeting/static/scss/ribbon.scss",
+    },
     'qweb': [
         'static/xml/template.xml',
     ]
