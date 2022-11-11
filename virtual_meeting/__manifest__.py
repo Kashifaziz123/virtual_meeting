@@ -14,6 +14,9 @@
     'depends': ['base', 'calendar', 'web'],
     'images': ['static/description/virtual_meeting_cover.jpg'],
     # always loaded
+    'external_dependencies': {
+        'python': ['pyperclip']
+    },
     'data': [
         'views/Scheduler.xml',
         'security/ir.model.access.csv',
