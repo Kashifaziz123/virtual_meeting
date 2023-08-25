@@ -42,7 +42,7 @@ class UmlOnlineClass(models.Model):
     allowModsToUnmuteUsers = fields.Boolean(string="Allow Moderators To Unmute Students")
     lockSettingsDisableMic = fields.Boolean(string="Disable Mic Of Students")
     # Compulsory
-    meetingID = fields.Char(string="Online Session ID", readonly=True,default=_generate_uuid)
+    meetingID = fields.Char(string="Online Session ID", readonly=True, default=_generate_uuid)
     attendeePW = fields.Char(string="Students Password")
     moderatorPW = fields.Char(string="Moderators Password")
 
@@ -67,26 +67,31 @@ class UmlOnlineClass(models.Model):
         general_settings = self.get_bigblue_config()
         if self.duration != 0:
             duration = str(self.duration).split('.')
-            duration[0] = int(duration[0])*60 + int(duration[1])
-            checksums = "create" + "name=" + str(self.name).replace(" ", "%20") + "&meetingID=" + str(self.meetingID)\
-                        + "&record=true&logoutURL="+str(general_settings[2])+"&webcamsOnlyForModerator="+str(self.webcamsOnlyForModerator)\
+            duration[0] = int(duration[0]) * 60 + int(duration[1])
+            checksums = "create" + "name=" + str(self.name).replace(" ", "%20") + "&meetingID=" + str(self.meetingID) \
+                        + "&record=true&logoutURL=" + str(general_settings[2]) + "&webcamsOnlyForModerator=" + str(
+                self.webcamsOnlyForModerator) \
                         + "&duration=" + str(duration[0]) \
-                        + "&moderatorOnlyMessage=" + str(self.moderatorOnlyMessage).replace(" ", "%20") + "&maxParticipants=" + str(self.maxParticipants) \
-                        + "&autoStartRecording=" + str(self.autoStartRecording)\
+                        + "&moderatorOnlyMessage=" + str(self.moderatorOnlyMessage).replace(" ",
+                                                                                            "%20") + "&maxParticipants=" + str(
+                self.maxParticipants) \
+                        + "&autoStartRecording=" + str(self.autoStartRecording) \
                         + "&allowStartStopRecording=" + str(self.allowStartStopRecording) \
-                        + "&welcome=" + str(self.welcome).replace(" ", "%20") + "&muteOnStart=" + str(self.muteOnStart) + "&allowModsToUnmuteUsers=" \
-                        + str(self.allowModsToUnmuteUsers) + "&lockSettingsDisableMic=" + str(self.lockSettingsDisableMic)\
+                        + "&welcome=" + str(self.welcome).replace(" ", "%20") + "&muteOnStart=" + str(
+                self.muteOnStart) + "&allowModsToUnmuteUsers=" \
+                        + str(self.allowModsToUnmuteUsers) + "&lockSettingsDisableMic=" + str(
+                self.lockSettingsDisableMic) \
                         + str(general_settings[1])
             checksum = hashlib.sha1(checksums.encode()).hexdigest()
-            link = str(general_settings[0])+"create?name="+str(self.name).replace(" ", "%20")+"&meetingID="\
-                   +str(self.meetingID)+"&record=true&logoutURL="+str(general_settings[2])+"&webcamsOnlyForModerator="+str(self.webcamsOnlyForModerator)\
-                   +"&duration="+str(duration[0]) \
-                   + "&moderatorOnlyMessage=" + str(self.moderatorOnlyMessage).replace(" ", "%20") + "&maxParticipants=" + str(self.maxParticipants) \
-                   +"&autoStartRecording="\
-                   +str(self.autoStartRecording)+"&allowStartStopRecording="+str(self.allowStartStopRecording) \
-                   + "&welcome=" + str(self.welcome).replace(" ", "%20") + "&muteOnStart=" + str(self.muteOnStart) + "&allowModsToUnmuteUsers=" \
-                   + str(self.allowModsToUnmuteUsers) + "&lockSettingsDisableMic=" + str(self.lockSettingsDisableMic)\
-                   +"&checksum="+checksum
+            link = (
+                f"{general_settings[0]}/create?"
+                f"name={str(self.name).replace(' ', '%20')}&meetingID={str(self.meetingID)}&"
+                f"record=true&logoutURL={str(general_settings[2])}&webcamsOnlyForModerator={str(self.webcamsOnlyForModerator)}&"
+                f"duration={str(duration[0])}&moderatorOnlyMessage={str(self.moderatorOnlyMessage).replace(' ', '%20')}&maxParticipants={str(self.maxParticipants)}&"
+                f"autoStartRecording={str(self.autoStartRecording)}&allowStartStopRecording={str(self.allowStartStopRecording)}&"
+                f"welcome={str(self.welcome).replace(' ', '%20')}&muteOnStart={str(self.muteOnStart)}&allowModsToUnmuteUsers={str(self.allowModsToUnmuteUsers)}&"
+                f"lockSettingsDisableMic={str(self.lockSettingsDisableMic)}&checksum={checksum}"
+            )
         try:
             response = requests.get(link)
             Returns = ElementTree.fromstring(response.content)
@@ -112,40 +117,46 @@ class UmlOnlineClass(models.Model):
             else:
                 raise exceptions.AccessDenied("Undefined Error\n Kindly contact your administrator")
         else:
-             raise exceptions.AccessDenied("Undefined Error\n Kindly contact your administrator")
+            raise exceptions.AccessDenied("Undefined Error\n Kindly contact your administrator")
 
     def join_guest_meeting(self, choice):
         general_settings = self.get_bigblue_config()
         if choice == 1 or choice == 3:
-            checksum = "join"+"meetingID="+str(self.meetingID)+"&password="+str(self.moderatorPW)+"&fullName=Guest"\
-                       + "&guest=true"+str(general_settings[1])
+            checksum = "join" + "meetingID=" + str(self.meetingID) + "&password=" + str(
+                self.moderatorPW) + "&fullName=Guest" \
+                       + "&guest=true" + str(general_settings[1])
             checksum = hashlib.sha1(checksum.encode()).hexdigest()
-            link = str(general_settings[0])+"join?meetingID=" + str(self.meetingID) + "&password="+ str(self.moderatorPW)\
-                    + "&fullName=Guest&guest=true" + "&checksum="+checksum
+            link = str(general_settings[0]) + "join?meetingID=" + str(self.meetingID) + "&password=" + str(
+                self.moderatorPW) \
+                   + "&fullName=Guest&guest=true" + "&checksum=" + checksum
             self.joinGuestModerator = link
         if choice == 2 or choice == 3:
-            checksum = "join"+"meetingID="+str(self.meetingID)+"&password="+str(self.attendeePW)+"&fullName=Guest"\
-                       + "&guest=true"+str(general_settings[1])
+            checksum = "join" + "meetingID=" + str(self.meetingID) + "&password=" + str(
+                self.attendeePW) + "&fullName=Guest" \
+                       + "&guest=true" + str(general_settings[1])
             checksum = hashlib.sha1(checksum.encode()).hexdigest()
-            link = str(general_settings[0])+"join?meetingID=" + str(self.meetingID) + "&password="+ str(self.attendeePW)\
-                   + "&fullName=Guest&guest=true" + "&checksum="+checksum
+            link = str(general_settings[0]) + "join?meetingID=" + str(self.meetingID) + "&password=" + str(
+                self.attendeePW) \
+                   + "&fullName=Guest&guest=true" + "&checksum=" + checksum
             self.joinGuestAttendee = link
 
     def join_meeting(self, person, name):
         general_settings = self.get_bigblue_config()
         link = ""
         if person == "moderator":
-            checksum = "join"+"meetingID="+str(self.meetingID)+"&password="+str(self.moderatorPW)+"&fullName="\
-                      +str(self.user_id.name).replace(" ","%20")+str(general_settings[1])
+            checksum = "join" + "meetingID=" + str(self.meetingID) + "&password=" + str(self.moderatorPW) + "&fullName=" \
+                       + str(self.user_id.name).replace(" ", "%20") + str(general_settings[1])
             checksum = hashlib.sha1(checksum.encode()).hexdigest()
-            link = str(general_settings[0])+"join?meetingID=" + str(self.meetingID) + "&password="+ str(self.moderatorPW)\
-                  +"&fullName="+str(self.user_id.name).replace(" ","%20") + "&checksum="+checksum
+            link = str(general_settings[0]) + "join?meetingID=" + str(self.meetingID) + "&password=" + str(
+                self.moderatorPW) \
+                   + "&fullName=" + str(self.user_id.name).replace(" ", "%20") + "&checksum=" + checksum
         elif person == "student":
-            checksum = "join"+"meetingID="+str(self.meetingID)+"&password="+str(self.attendeePW)+"&fullName="\
-                      +str(name).replace(" ","%20")+str(general_settings[1])
+            checksum = "join" + "meetingID=" + str(self.meetingID) + "&password=" + str(self.attendeePW) + "&fullName=" \
+                       + str(name).replace(" ", "%20") + str(general_settings[1])
             checksum = hashlib.sha1(checksum.encode()).hexdigest()
-            link = str(general_settings[0])+"join?meetingID=" + str(self.meetingID) + "&password="+ str(self.attendeePW)\
-                  +"&fullName="+str(name).replace(" ","%20") + "&checksum="+checksum
+            link = str(general_settings[0]) + "join?meetingID=" + str(self.meetingID) + "&password=" + str(
+                self.attendeePW) \
+                   + "&fullName=" + str(name).replace(" ", "%20") + "&checksum=" + checksum
         return link
 
     def download_recording(self):
@@ -185,12 +196,18 @@ class UmlOnlineClass(models.Model):
         checksum = "join" + "meetingID=" + str(self.meetingID) + "&password=" + str(self.moderatorPW) + "&fullName=" \
                    + str(self.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + str(general_settings[1])
         checksum = hashlib.sha1(checksum.encode()).hexdigest()
-        link = str(general_settings[0]) + "join?meetingID=" + str(self.meetingID) + "&password=" + str(self.moderatorPW) \
-               + "&fullName=" + str(self.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + "&checksum=" + checksum
+        link = (
+            f"{general_settings[0]}/join?"
+            f"meetingID={self.meetingID}&"
+            f"password={self.moderatorPW}&"
+            f"fullName={self.user_id.name.replace(' ', '%20')}&"
+            f"redirect=FALSE&"
+            f"checksum={checksum}"
+        )
         try:
             print(link)
             response = requests.get(link)
-            Returns = ElementTree.fromstring(response.content)
+            Returns = ElementTree.fromstring(response.text)
             if Returns[0].text == "SUCCESS":
                 if self.isMultipleModerators:
                     if self.env.user.id in self.user_ids.ids:
@@ -223,9 +240,11 @@ class UmlOnlineClass(models.Model):
 
     def delete_meeting(self):
         general_settings = self.get_bigblue_config()
-        checksums = "end"+"meetingID="+str(self.meetingID)+"&password="+str(self.moderatorPW)+str(general_settings[1])
+        checksums = "end" + "meetingID=" + str(self.meetingID) + "&password=" + str(self.moderatorPW) + str(
+            general_settings[1])
         checksum = hashlib.sha1(checksums.encode()).hexdigest()
-        link = str(general_settings[0])+"end?meetingID="+str(self.meetingID)+"&password="+str(self.moderatorPW)+"&checksum="+checksum
+        link = str(general_settings[0]) + "end?meetingID=" + str(self.meetingID) + "&password=" + str(
+            self.moderatorPW) + "&checksum=" + checksum
         try:
             response = requests.get(link)
             Returns = ElementTree.fromstring(response.content)
@@ -263,10 +282,12 @@ class UmlOnlineClass(models.Model):
         general_settings = self.get_bigblue_config()
         for data in records:
             checksum = "join" + "meetingID=" + str(data.meetingID) + "&password=" + str(data.moderatorPW) + "&fullName=" \
-                      + str(data.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + str(general_settings[1])
+                       + str(data.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + str(general_settings[1])
             checksum = hashlib.sha1(checksum.encode()).hexdigest()
-            link = str(general_settings[0]) + "join?meetingID=" + str(data.meetingID) + "&password=" + str(data.moderatorPW) \
-                  + "&fullName=" + str(data.user_id.name).replace(" ", "%20") + "&redirect=FALSE" + "&checksum=" + checksum
+            link = str(general_settings[0]) + "join?meetingID=" + str(data.meetingID) + "&password=" + str(
+                data.moderatorPW) \
+                   + "&fullName=" + str(data.user_id.name).replace(" ",
+                                                                   "%20") + "&redirect=FALSE" + "&checksum=" + checksum
             try:
                 response = requests.get(link)
                 Returns = ElementTree.fromstring(response.content)
@@ -274,8 +295,9 @@ class UmlOnlineClass(models.Model):
                 data.state = 'done'
 
     def recording_ready(self):
-        records = self.env['calendar.event'].search([('state', '=', 'done'), '|', ('allowStartStopRecording', '=', 'True'),
-                                                     ('autoStartRecording', '=', 'True')])
+        records = self.env['calendar.event'].search(
+            [('state', '=', 'done'), '|', ('allowStartStopRecording', '=', 'True'),
+             ('autoStartRecording', '=', 'True')])
         general_settings = self.get_bigblue_config()
         for data in records:
             checksums = "getRecordings" + "meetingID=" + str(data.meetingID) + str(general_settings[1])
@@ -314,15 +336,16 @@ class UmlOnlineClass(models.Model):
                             <br /><br />\
                             Here is your\
                             <br />\
-                            link for your meeting " + str(self.join_meeting("moderator", ""))\
-                        + "</p>\
+                            link for your meeting " + str(self.join_meeting("moderator", "")) \
+                                     + "</p>\
                     </div>"
         try:
             if not self.isMultipleModerators:
                 template_mod.email_to = self.user_id.email
                 template_mod.send_mail(self.id, force_send=True)
             else:
-                template_mod.subject = "One of the moderators have started the Meeting " + str(self.name) + " Scheduled for " + \
+                template_mod.subject = "One of the moderators have started the Meeting " + str(
+                    self.name) + " Scheduled for " + \
                                        str(self.start_datetime) + "."
                 for user in self.user_ids:
                     template_mod.email_to = user.email
@@ -333,8 +356,8 @@ class UmlOnlineClass(models.Model):
                             <br /><br />\
                             Here is your\
                             <br />\
-                            link for your meeting " + str(self.join_meeting("moderator", ""))\
-                        + "</p>\
+                            link for your meeting " + str(self.join_meeting("moderator", "")) \
+                                             + "</p>\
                     </div>"
                     template_mod.send_mail(self.id, force_send=True)
 
@@ -347,8 +370,8 @@ class UmlOnlineClass(models.Model):
                             <br /><br />\
                             Here is your\
                             <br />\
-                            link for your meeting " + self.join_meeting("student", attendee.partner_id.name)\
-                        + "</p>\
+                            link for your meeting " + self.join_meeting("student", attendee.partner_id.name) \
+                                         + "</p>\
                     </div>"
                 template_stu.send_mail(self.id, force_send=True)
         except:
@@ -357,9 +380,11 @@ class UmlOnlineClass(models.Model):
     def send_recording_ready_email_func(self, record):
         template_mod = self.env.ref('virtual_meeting.calendar_event_mail_moderator', False)
         template_stu = self.env.ref('virtual_meeting.calendar_event_mail_attendee', False)
-        template_stu.subject = "Your Recording for the Meeting " + str(record.name) + " Scheduled for " + str(record.start_datetime) \
+        template_stu.subject = "Your Recording for the Meeting " + str(record.name) + " Scheduled for " + str(
+            record.start_datetime) \
                                + " is ready."
-        template_mod.subject = "Your Recording for the Meeting " + str(record.name) + " Scheduled for " + str(record.start_datetime) \
+        template_mod.subject = "Your Recording for the Meeting " + str(record.name) + " Scheduled for " + str(
+            record.start_datetime) \
                                + " is ready."
         if not record.isMultipleModerators:
             template_mod.body_html = " \
@@ -369,8 +394,8 @@ class UmlOnlineClass(models.Model):
                             <br /><br />\
                             Here is your\
                             <br />\
-                            link for your meeting recording " + str(record.recording_url)\
-                        + "</p>\
+                            link for your meeting recording " + str(record.recording_url) \
+                                     + "</p>\
                     </div>"
         try:
             if not record.isMultipleModerators:
@@ -386,8 +411,8 @@ class UmlOnlineClass(models.Model):
                             <br /><br />\
                             Here is your\
                             <br />\
-                            link for your meeting recording " + str(record.recording_url)\
-                        + "</p>\
+                            link for your meeting recording " + str(record.recording_url) \
+                                             + "</p>\
                     </div>"
                     template_mod.send_mail(record.id, force_send=True)
 
@@ -400,8 +425,8 @@ class UmlOnlineClass(models.Model):
                             <br /><br />\
                             Here is your\
                             <br />\
-                            link for your meeting recording " + str(record.recording_url)\
-                        + "</p>\
+                            link for your meeting recording " + str(record.recording_url) \
+                                         + "</p>\
                     </div>"
                 template_stu.send_mail(record.id, force_send=True)
         except:
